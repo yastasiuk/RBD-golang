@@ -3,6 +3,8 @@ package documentstore
 import (
 	"errors"
 	"fmt"
+	"reflect"
+	"slices"
 )
 
 type DocumentFieldType string
@@ -26,29 +28,73 @@ type Document struct {
 
 type DocumentValidatorErrors = []error
 
+var requiredFields = []string{
+	"key",
+}
+
+var numberTypes = []reflect.Kind{
+	reflect.Int,
+	reflect.Int8,
+	reflect.Int16,
+	reflect.Int32,
+	reflect.Int64,
+	reflect.Uint,
+	reflect.Uint8,
+	reflect.Uint16,
+	reflect.Uint32,
+	reflect.Uint64,
+	reflect.Uintptr,
+	reflect.Float32,
+	reflect.Float64,
+	reflect.Complex64,
+	reflect.Complex128,
+}
+
 func validateDocument(doc Document) (DocumentValidatorErrors, bool) {
+	requiredFieldsCheck := map[string]interface{}{}
+	for _, fieldKey := range requiredFields {
+		requiredFieldsCheck[fieldKey] = nil
+	}
+
 	validatorErrors := DocumentValidatorErrors{}
-	hasKeyField := false
+
 	for key, value := range doc.Fields {
-		if key == "key" {
-			hasKeyField = true
-			if value.Type != DocumentFieldTypeString {
-				validatorErrors = append(validatorErrors, errors.New(fmt.Sprintf("field 'key' has invalid type. Required: 'string'. Passed: %s", value.Type)))
+		if _, ok := requiredFieldsCheck[key]; ok {
+			delete(requiredFieldsCheck, key)
+		}
+
+		var errorMsg string
+		switch value.Type {
+		case DocumentFieldTypeString:
+			if t := reflect.TypeOf(value.Value).Kind(); t != reflect.String {
+				errorMsg = fmt.Sprintf("Document field %s type mismatch: expected string, got %s", key, t)
 			}
-			switch t := value.Value.(type) {
-			case string:
-				if value.Value.(string) == "" {
-					validatorErrors = append(validatorErrors, errors.New("field 'key' value is required"))
-				}
-			default:
-				validatorErrors = append(validatorErrors, errors.New(fmt.Sprintf("field 'key' has invalid value type. Required: 'string'. Passed: %s", t)))
+		case DocumentFieldTypeNumber:
+			if t := reflect.TypeOf(value.Value).Kind(); !slices.Contains(numberTypes, t) {
+				errorMsg = fmt.Sprintf("Document field %s type mismatch: expected number, got %s", key, t)
 			}
+		case DocumentFieldTypeBool:
+			if t := reflect.TypeOf(value.Value).Kind(); t != reflect.Bool {
+				errorMsg = fmt.Sprintf("Document field %s type mismatch: expected boolean, got %s", key, t)
+			}
+		case DocumentFieldTypeArray:
+			if t := reflect.TypeOf(value.Value).Kind(); t != reflect.Array && t != reflect.Slice {
+				errorMsg = fmt.Sprintf("Document field %s type mismatch: expected array, got %s", key, t)
+			}
+		case DocumentFieldTypeObject:
+			if t := reflect.TypeOf(value.Value).Kind(); t != reflect.Struct {
+				errorMsg = fmt.Sprintf("Document field %s type mismatch: expected object, got %s", key, t)
+			}
+		}
+
+		if errorMsg != "" {
+			validatorErrors = append(validatorErrors, errors.New(errorMsg))
 		}
 
 	}
 
-	if !hasKeyField {
-		validatorErrors = append(validatorErrors, errors.New("field 'key' not found in document"))
+	for _, missingRequiredField := range requiredFieldsCheck {
+		validatorErrors = append(validatorErrors, errors.New(fmt.Sprintf("field %d is required", missingRequiredField)))
 	}
 
 	return validatorErrors, len(validatorErrors) == 0

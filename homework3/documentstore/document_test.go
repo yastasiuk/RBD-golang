@@ -39,22 +39,49 @@ func TestPutNew(t *testing.T) {
 func TestPutInvalid(t *testing.T) {
 	defer ResetStore()
 
-	testCases := []Document{
-		{Fields: map[string]DocumentField{
-			"key": {Value: "Not valid type", Type: DocumentFieldTypeBool},
-		}},
-		{Fields: map[string]DocumentField{
-			"notKey": {Value: "Key field is missing", Type: DocumentFieldTypeString},
-		}},
-		{Fields: map[string]DocumentField{
-			"key": {Value: 123, Type: DocumentFieldTypeString}, // Invalid value type
-		}},
+	testCases := []struct {
+		name  string
+		value Document
+	}{
+		{
+			"Key with invalid 'Type'",
+			Document{
+				Fields: map[string]DocumentField{
+					"key": {Value: "Not valid type", Type: DocumentFieldTypeBool},
+				},
+			},
+		},
+		{
+			"Required field 'key' is missing",
+			Document{
+				Fields: map[string]DocumentField{
+					"notKey": {Value: "Key field is missing", Type: DocumentFieldTypeString},
+				},
+			},
+		},
+		{
+			"Field 'key' has invalid value type",
+			Document{
+				Fields: map[string]DocumentField{
+					"key": {Value: 123, Type: DocumentFieldTypeString},
+				},
+			},
+		},
+		{
+			"Field 'should_be_array' have struct value, while it should be an array",
+			Document{
+				Fields: map[string]DocumentField{
+					"key":             {Value: "valid_key", Type: DocumentFieldTypeString},
+					"should_be_array": {Value: struct{ Value string }{Value: "string"}, Type: DocumentFieldTypeArray},
+				},
+			},
+		},
 	}
 
 	for i, testCase := range testCases {
 		ResetStore()
-		t.Run(fmt.Sprintf("Test case #%d", i), func(t *testing.T) {
-			Put(testCase)
+		t.Run(fmt.Sprintf("Test case %s", testCase.name), func(t *testing.T) {
+			Put(testCase.value)
 			ans := List()
 			if len(ans) != 0 {
 				t.Error(fmt.Sprintf("Test case #%d added new item to documents store. Size: %d", i, len(ans)))
