@@ -20,20 +20,40 @@ func TestListEmpty(t *testing.T) {
 func TestPutNew(t *testing.T) {
 	defer ResetStore()
 
-	doc := Document{}
-	doc.Fields = map[string]DocumentField{
-		"key":  {Value: "123", Type: DocumentFieldTypeString},
-		"name": {Value: "Joe", Type: DocumentFieldTypeString},
+	testCases := []struct {
+		name  string
+		value Document
+	}{
+		{
+			"Document with multiple fields",
+			Document{
+				Fields: map[string]DocumentField{
+					"key":  {Value: "123", Type: DocumentFieldTypeString},
+					"name": {Value: "Joe", Type: DocumentFieldTypeString},
+				},
+			},
+		},
+		{
+			"Document with cyrillic key",
+			Document{
+				Fields: map[string]DocumentField{
+					"key": {Value: "це_є_ключ_42", Type: DocumentFieldTypeString},
+				},
+			},
+		},
 	}
 
-	t.Run("Should insert new document", func(t *testing.T) {
-		Put(doc)
-		if ans := List(); len(ans) != 1 {
-			t.Error(fmt.Sprintf("Should return 1 document, returned %d:", len(ans)))
-		} else if !reflect.DeepEqual(ans[0], doc) {
-			t.Error("New document is not equal to an old one")
-		}
-	})
+	for _, testCase := range testCases {
+		ResetStore()
+		t.Run(testCase.name, func(t *testing.T) {
+			Put(testCase.value)
+			if ans := List(); len(ans) != 1 {
+				t.Error(fmt.Sprintf("Should return 1 document, returned %d:", len(ans)))
+			} else if !reflect.DeepEqual(ans[0], testCase.value) {
+				t.Error("New document is not equal to an old one")
+			}
+		})
+	}
 }
 
 func TestPutInvalid(t *testing.T) {
