@@ -3,8 +3,6 @@ package documentstore
 import (
 	"errors"
 	"fmt"
-	"reflect"
-	"slices"
 )
 
 type DocumentFieldType string
@@ -32,22 +30,21 @@ var requiredFields = []string{
 	"key",
 }
 
-var numberTypes = []reflect.Kind{
-	reflect.Int,
-	reflect.Int8,
-	reflect.Int16,
-	reflect.Int32,
-	reflect.Int64,
-	reflect.Uint,
-	reflect.Uint8,
-	reflect.Uint16,
-	reflect.Uint32,
-	reflect.Uint64,
-	reflect.Uintptr,
-	reflect.Float32,
-	reflect.Float64,
-	reflect.Complex64,
-	reflect.Complex128,
+func getType(k interface{}) DocumentFieldType {
+	switch k.(type) {
+	case string:
+		return DocumentFieldTypeString
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, uintptr:
+		return DocumentFieldTypeNumber
+	case bool:
+		return DocumentFieldTypeBool
+	case []interface{}:
+		return DocumentFieldTypeArray
+	case map[string]interface{}:
+		return DocumentFieldTypeObject
+	default:
+		return "unknown"
+	}
 }
 
 func validateDocument(doc Document) (DocumentValidatorErrors, bool) {
@@ -64,32 +61,8 @@ func validateDocument(doc Document) (DocumentValidatorErrors, bool) {
 		}
 
 		var errorMsg string
-		switch value.Type {
-		case DocumentFieldTypeString:
-			if t := reflect.TypeOf(value.Value).Kind(); t != reflect.String {
-				errorMsg = fmt.Sprintf("Document field %s type mismatch: expected string, got %s", key, t)
-			}
-		case DocumentFieldTypeNumber:
-			if t := reflect.TypeOf(value.Value).Kind(); !slices.Contains(numberTypes, t) {
-				errorMsg = fmt.Sprintf("Document field %s type mismatch: expected number, got %s", key, t)
-			}
-		case DocumentFieldTypeBool:
-			if t := reflect.TypeOf(value.Value).Kind(); t != reflect.Bool {
-				errorMsg = fmt.Sprintf("Document field %s type mismatch: expected boolean, got %s", key, t)
-			}
-		case DocumentFieldTypeArray:
-			if t := reflect.TypeOf(value.Value).Kind(); t != reflect.Array && t != reflect.Slice {
-				errorMsg = fmt.Sprintf("Document field %s type mismatch: expected array, got %s", key, t)
-			}
-		case DocumentFieldTypeObject:
-			if t := reflect.TypeOf(value.Value).Kind(); t != reflect.Struct {
-				errorMsg = fmt.Sprintf("Document field %s type mismatch: expected object, got %s", key, t)
-			}
-		default:
-			errorMsg = fmt.Sprintf("Document field %s has unsupported type %s", key, value.Type)
-		}
-
-		if errorMsg != "" {
+		if t := getType(value.Value); t != value.Type {
+			errorMsg = fmt.Sprintf("Document field %s type mismatch. Expected: %s, got: %s", key, value.Type, t)
 			validatorErrors = append(validatorErrors, errors.New(errorMsg))
 		}
 
