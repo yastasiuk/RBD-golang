@@ -85,6 +85,8 @@ func validateDocument(doc Document) (DocumentValidatorErrors, bool) {
 			if t := reflect.TypeOf(value.Value).Kind(); t != reflect.Struct {
 				errorMsg = fmt.Sprintf("Document field %s type mismatch: expected object, got %s", key, t)
 			}
+		default:
+			errorMsg = fmt.Sprintf("Document field %s has unsupported type %s", key, value.Type)
 		}
 
 		if errorMsg != "" {

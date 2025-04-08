@@ -76,6 +76,15 @@ func TestPutInvalid(t *testing.T) {
 				},
 			},
 		},
+		{
+			"Field 'should_be_array' have struct value, while it should be an array",
+			Document{
+				Fields: map[string]DocumentField{
+					"key":         {Value: "valid_key", Type: DocumentFieldTypeString},
+					"custom_type": {Value: "huh", Type: "random_type"},
+				},
+			},
+		},
 	}
 
 	for i, testCase := range testCases {
