@@ -77,7 +77,7 @@ func TestPutInvalid(t *testing.T) {
 			},
 		},
 		{
-			"Field 'should_be_array' have struct value, while it should be an array",
+			"Field 'custom_type' have unsupported 'Type'",
 			Document{
 				Fields: map[string]DocumentField{
 					"key":         {Value: "valid_key", Type: DocumentFieldTypeString},
