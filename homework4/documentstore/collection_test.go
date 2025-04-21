@@ -8,7 +8,7 @@ import (
 func TestCollection_CreateNew(t *testing.T) {
 	t.Run("Should create new collection", func(t *testing.T) {
 		primaryKey := "primaryKey"
-		if collection := NewCollection(&CollectionConfig{PrimaryKey: primaryKey}); collection.PrimaryKey != primaryKey {
+		if collection := NewCollection(&CollectionConfig{PrimaryKey: primaryKey}); collection.cfg.PrimaryKey != primaryKey {
 			t.Error(fmt.Errorf("expected collection to be created with primaryKey %s, passed %s", primaryKey, primaryKey))
 		}
 	})
@@ -85,7 +85,7 @@ func TestCollection_List(t *testing.T) {
 		})
 		docs := collection.List()
 		if len(docs) != 1 {
-			t.Error(fmt.Errorf("store should return 1 elements. Returned: %d", len(docs)))
+			t.Error(fmt.Errorf("store should return 1 elements. Returned: %+v", docs))
 		}
 	})
 }

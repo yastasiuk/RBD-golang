@@ -24,25 +24,14 @@ func GetType(k interface{}) DocumentFieldType {
 	}
 }
 
-func ValidateDocument(documentKey string, doc Document) (DocumentValidatorErrors, bool) {
+func validateDocument(doc Document) (DocumentValidatorErrors, bool) {
 	validatorErrors := DocumentValidatorErrors{}
-
-	if documentConfigValue, ok := doc.Fields[documentKey]; !ok {
-		validatorErrors = append(validatorErrors, fmt.Errorf("config key is missing: %s", documentKey))
-	} else if GetType(documentConfigValue.Value) != DocumentFieldTypeString {
-		validatorErrors = append(
-			validatorErrors,
-			fmt.Errorf("config key type is incorrect. Should be string, passed: %s", GetType(documentConfigValue)),
-		)
-	}
-
 	for key, value := range doc.Fields {
 		var errorMsg string
 		if t := GetType(value.Value); t != value.Type {
 			errorMsg = fmt.Sprintf("Document field %s type mismatch. Expected: %s, got: %s", key, value.Type, t)
 			validatorErrors = append(validatorErrors, errors.New(errorMsg))
 		}
-
 	}
 
 	return validatorErrors, len(validatorErrors) == 0

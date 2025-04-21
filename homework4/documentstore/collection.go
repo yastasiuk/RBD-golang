@@ -3,8 +3,8 @@ package documentstore
 import "fmt"
 
 type Collection struct {
-	CollectionConfig
-	documents []Document
+	cfg       CollectionConfig
+	documents map[string]Document
 }
 
 type CollectionConfig struct {
@@ -13,51 +13,57 @@ type CollectionConfig struct {
 
 func NewCollection(cfg *CollectionConfig) *Collection {
 	col := Collection{
-		CollectionConfig: *cfg,
-		documents:        []Document{},
+		cfg:       *cfg,
+		documents: map[string]Document{},
 	}
 
 	return &col
 }
 
 func (s *Collection) Put(doc Document) {
-	// Потрібно перевірити що документ містить поле `{cfg.PrimaryKey}` типу `string`
-	if err, ok := ValidateDocument(s.PrimaryKey, doc); !ok {
+	primaryKeyField, ok := doc.Fields[s.cfg.PrimaryKey]
+	if !ok {
+		fmt.Printf("Config key is missing in doc, %v\n", doc)
+		return
+	}
+
+	id, typedCorrectly := primaryKeyField.Value.(string)
+
+	if !typedCorrectly {
+		fmt.Println("Config key has incorrect type")
+		return
+	}
+
+	if err, ok := validateDocument(doc); !ok {
 		fmt.Println("Document is not valid:", err)
 		return
 	}
 
-	if _, exists := s.Get(doc.Fields[s.PrimaryKey].Value.(string)); exists {
-		fmt.Println("Document already exists:", doc.Fields[s.PrimaryKey].Value)
-		return
-	}
-
-	s.documents = append(s.documents, doc)
+	s.documents[id] = doc
 }
 
 func (s *Collection) Get(key string) (*Document, bool) {
-	for _, doc := range s.documents {
-		if doc.Fields[s.PrimaryKey].Value == key {
-			return &doc, true
-		}
+	if doc, ok := s.documents[key]; ok {
+		return &doc, true
 	}
 
 	return nil, false
 }
 
 func (s *Collection) Delete(key string) bool {
-	for i, doc := range s.documents {
-		if doc.Fields[s.PrimaryKey].Value == key {
-			sls := make([]Document, len(s.documents)-1)
-			copy(sls, append(s.documents[:i], s.documents[i+1:]...))
-			s.documents = sls
-			return true
-		}
+	if _, exists := s.Get(key); exists {
+		delete(s.documents, key)
+		return true
 	}
 
 	return false
 }
 
 func (s *Collection) List() []Document {
-	return s.documents
+	docs := make([]Document, 0, len(s.documents))
+	for _, doc := range s.documents {
+		docs = append(docs, doc)
+	}
+
+	return docs
 }

@@ -39,7 +39,7 @@ func TestStore_CreateCollection(t *testing.T) {
 		if len(store.collections) != 1 {
 			t.Error(fmt.Errorf("store should have 1 collection, got: %d", len(store.collections)))
 		}
-		if keyValue := store.collections["test"].PrimaryKey; keyValue != "primaryKey" {
+		if keyValue := store.collections["test"].cfg.PrimaryKey; keyValue != "primaryKey" {
 			t.Error(fmt.Errorf("wrong collection is saved in store. Passed: %s", keyValue))
 		}
 	})
@@ -53,7 +53,7 @@ func TestStore_GetCollection(t *testing.T) {
 		if !ok {
 			t.Error(fmt.Errorf("store should have a collection, got: %v", collection))
 		}
-		if collection.CollectionConfig.PrimaryKey != "primaryKey" {
+		if collection.cfg.PrimaryKey != "primaryKey" {
 			t.Error(fmt.Errorf("wrong collection is saved in store. Passed: %v", collection))
 		}
 	})
