@@ -82,14 +82,13 @@ func TestStore_DeleteCollection(t *testing.T) {
 func TestStore_DocumentCreation(t *testing.T) {
 	t.Run("Should add document in store", func(t *testing.T) {
 		store := NewStore()
-		_, collection := store.CreateCollection("test", &CollectionConfig{PrimaryKey: "primaryKey"})
-		primaryKey := "uniqueKye"
+		_, collection := store.CreateCollection("test", &CollectionConfig{PrimaryKey: "id"})
 		collection.Put(Document{
 			Fields: map[string]DocumentField{
-				"primaryKey": {Type: DocumentFieldTypeString, Value: primaryKey},
+				"id": {Type: DocumentFieldTypeString, Value: "unique_id"},
 			},
 		})
-		if col, ok := collection.Get(primaryKey); !ok {
+		if col, ok := collection.Get("unique_id"); !ok {
 			t.Error(fmt.Errorf("collection should have a document with primaryKey: %v", col))
 		}
 	})

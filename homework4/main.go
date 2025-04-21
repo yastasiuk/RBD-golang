@@ -2,22 +2,24 @@ package main
 
 import (
 	"fmt"
-	. "homework3/documentstore"
+	. "homework4/documentstore"
 )
 
 func main() {
-	doc1 := Document{}
-	doc1.Fields = map[string]DocumentField{}
-	doc1.Fields["key"] = DocumentField{
-		Type:  DocumentFieldTypeString,
-		Value: "value",
-	}
-	Put(doc1)
-	list := List()
-	fmt.Println(list[0])
+	store := NewStore()
+	_, collection := store.CreateCollection("test", &CollectionConfig{PrimaryKey: "id"})
+	collection.Put(Document{
+		Fields: map[string]DocumentField{
+			"id": {Type: DocumentFieldTypeString, Value: "unique_id"},
+		},
+	})
 
+	document, _ := collection.Get("unique_id")
+
+	fmt.Printf("Store: %+v", store)
+	fmt.Println()
+	fmt.Printf("Collection: %+v", collection)
+	fmt.Println()
+	fmt.Printf("Document: %+v", document)
+	fmt.Println()
 }
-
-/**
-Add benchmark with and w/o reflection(for type validation)
-*/
