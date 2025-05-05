@@ -3,21 +3,22 @@ package documentstore
 import (
 	"errors"
 	"fmt"
+	"reflect"
 )
 
 type DocumentValidatorErrors = []error
 
-func GetType(k interface{}) DocumentFieldType {
-	switch k.(type) {
-	case string:
+func GetType(k reflect.Kind) DocumentFieldType {
+	switch k {
+	case reflect.String:
 		return DocumentFieldTypeString
-	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, uintptr:
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Float32, reflect.Float64, reflect.Uintptr, reflect.Complex64, reflect.Complex128:
 		return DocumentFieldTypeNumber
-	case bool:
+	case reflect.Bool:
 		return DocumentFieldTypeBool
-	case []interface{}:
+	case reflect.Array, reflect.Slice:
 		return DocumentFieldTypeArray
-	case map[string]interface{}:
+	case reflect.Map, reflect.Struct:
 		return DocumentFieldTypeObject
 	default:
 		return "unknown"
@@ -28,7 +29,7 @@ func validateDocument(doc Document) error {
 	validatorErrors := DocumentValidatorErrors{}
 	for key, value := range doc.Fields {
 		var errorMsg string
-		if t := GetType(value.Value); t != value.Type {
+		if t := GetType(reflect.TypeOf(value.Value).Kind()); t != value.Type {
 			errorMsg = fmt.Sprintf("Document field %s type mismatch. Expected: %s, got: %s", key, value.Type, t)
 			validatorErrors = append(validatorErrors, errors.New(errorMsg))
 		}

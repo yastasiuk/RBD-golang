@@ -26,10 +26,10 @@ func MarshalDocument(input any) (*Document, error) {
 	documentFields := map[string]DocumentField{}
 	for i := 0; i < t.NumField(); i++ {
 		if docKey := t.Field(i).Tag.Get("document"); docKey != "" {
-			value := v.Field(i).Interface()
+			value := v.Field(i)
 			documentFields[docKey] = DocumentField{
-				Type:  GetType(value),
-				Value: value,
+				Type:  GetType(value.Kind()),
+				Value: value.Interface(),
 			}
 		}
 	}
