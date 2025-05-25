@@ -27,9 +27,9 @@ type cache struct {
 }
 
 func (c *cache) Put(key, value string) {
-	// Cache already exists - do nothing
 	if _, ok := c.Get(key); ok {
 		c.positionMap[key] = cacheValue{value, c.positionMap[key].node}
+		return
 	}
 
 	c.currentSize += 1
@@ -106,10 +106,7 @@ func NewLruCache(capacity int) LruCache {
 
 	cacheImplementation = &cache{
 		capacity:    capacity,
-		currentSize: 0,
-		positionMap: make(map[string]cacheValue),
-		first:       nil,
-		last:        nil,
+		positionMap: make(map[string]cacheValue, capacity),
 	}
 
 	return cacheImplementation
