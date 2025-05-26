@@ -2,18 +2,17 @@ package documentstore
 
 import (
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"os"
 )
 
 type Store struct {
-	Collections map[string]Collection `json:"collections"`
+	Collections map[string]*Collection `json:"collections"`
 }
 
 func NewStore() *Store {
 	store := Store{
-		Collections: make(map[string]Collection),
+		Collections: make(map[string]*Collection),
 	}
 
 	return &store
@@ -29,7 +28,7 @@ func (s *Store) CreateCollection(name string, cfg *CollectionConfig) (bool, *Col
 	}
 
 	newCollection := NewCollection(cfg)
-	s.Collections[name] = *newCollection
+	s.Collections[name] = newCollection
 
 	return true, newCollection
 }
@@ -37,7 +36,7 @@ func (s *Store) CreateCollection(name string, cfg *CollectionConfig) (bool, *Col
 func (s *Store) GetCollection(name string) (*Collection, bool) {
 	slog.Debug("GetCollection", "name", name)
 	if collection, ok := s.Collections[name]; ok {
-		return &collection, true
+		return collection, true
 	}
 
 	return nil, false
@@ -69,9 +68,9 @@ func NewStoreFromDump(dump []byte) (*Store, error) {
 	return store, nil
 }
 
+// Dump Методи повинен віддати дамп нашого стору в який включені дані про колекції та документ
 func (s *Store) Dump() ([]byte, error) {
 	slog.Debug("Dump store")
-	// Методи повинен віддати дамп нашого стору в який включені дані про колекції та документ
 
 	jsonBytes, err := json.MarshalIndent(s, "", "  ")
 	if err != nil {
@@ -82,7 +81,7 @@ func (s *Store) Dump() ([]byte, error) {
 	return jsonBytes, nil
 }
 
-// Значення яке повертає метод `store.Dump()` має без помилок оброблятись функцією `NewStoreFromDump`
+// NewStoreFromFile Значення яке повертає метод `store.Dump()` має без помилок оброблятись функцією `NewStoreFromDump`
 func NewStoreFromFile(filename string) (*Store, error) {
 	slog.Debug("NewStoreFromFile", "filename", filename)
 	// Робить те ж саме що і функція `NewStoreFromDump`, але сам дамп має діставатись з файлу
@@ -109,8 +108,6 @@ func (s *Store) DumpToFile(filename string) error {
 		slog.Error("Error on Dump()", "err", err)
 		return err
 	}
-
-	fmt.Println(string(jsonBytes))
 
 	err = os.WriteFile(filename, jsonBytes, 0644)
 	if err != nil {

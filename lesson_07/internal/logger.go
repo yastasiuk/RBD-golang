@@ -1,9 +1,13 @@
-package main
+package internal
 
 import (
 	"log/slog"
 	"os"
 )
+
+func init() {
+	setupLogger()
+}
 
 func setupLogger() *slog.Logger {
 	// Console handler (e.g., os.Stdout)

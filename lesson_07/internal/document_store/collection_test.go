@@ -9,7 +9,7 @@ func TestCollection_CreateNew(t *testing.T) {
 	t.Run("Should create new collection", func(t *testing.T) {
 		primaryKey := "primaryKey"
 		collection := NewCollection(&CollectionConfig{PrimaryKey: primaryKey})
-		assert.Equal(t, primaryKey, collection.Cfg.PrimaryKey)
+		assert.Equal(t, primaryKey, collection.cfg.PrimaryKey)
 	})
 }
 
@@ -22,13 +22,13 @@ func TestCollection_Put(t *testing.T) {
 			},
 		})
 
-		assert.Equal(t, 1, len(collection.Documents))
+		assert.Equal(t, 1, len(collection.documents))
 	})
 
 	t.Run("Should not add invalid document", func(t *testing.T) {
 		collection := NewCollection(&CollectionConfig{PrimaryKey: "primaryKey"})
 		collection.Put(Document{})
-		assert.Equal(t, 0, len(collection.Documents))
+		assert.Equal(t, 0, len(collection.documents))
 	})
 
 	t.Run("Should not add already existing document", func(t *testing.T) {
@@ -43,7 +43,7 @@ func TestCollection_Put(t *testing.T) {
 				"primaryKey": {Type: DocumentFieldTypeString, Value: "123"},
 			},
 		})
-		assert.Equal(t, 1, len(collection.Documents))
+		assert.Equal(t, 1, len(collection.documents))
 	})
 }
 

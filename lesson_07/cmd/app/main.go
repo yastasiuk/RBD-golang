@@ -2,12 +2,9 @@ package main
 
 import (
 	"fmt"
-	. "lesson_07/document_store"
+	_ "lesson_07/internal"
+	. "lesson_07/internal/document_store"
 )
-
-func init() {
-	setupLogger()
-}
 
 func main() {
 	store := NewStore()

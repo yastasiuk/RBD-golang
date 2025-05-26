@@ -1,6 +1,7 @@
 package documentstore
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -13,6 +14,11 @@ var ErrValidationFailed = errors.New("validation failed")
 var ErrUserUniquenessValidation = errors.New("user already exists")
 
 type Collection struct {
+	cfg       CollectionConfig
+	documents map[string]Document
+}
+
+type PublicCollection struct {
 	Cfg       CollectionConfig    `json:"cfg"`
 	Documents map[string]Document `json:"documents"`
 }
@@ -23,8 +29,8 @@ type CollectionConfig struct {
 
 func NewCollection(cfg *CollectionConfig) *Collection {
 	col := Collection{
-		Cfg:       *cfg,
-		Documents: map[string]Document{},
+		cfg:       *cfg,
+		documents: map[string]Document{},
 	}
 
 	return &col
@@ -32,7 +38,7 @@ func NewCollection(cfg *CollectionConfig) *Collection {
 
 func (s *Collection) Put(doc Document) (*Document, error) {
 	slog.Debug("Put document", "doc", doc)
-	primaryKeyField, ok := doc.Fields[s.Cfg.PrimaryKey]
+	primaryKeyField, ok := doc.Fields[s.cfg.PrimaryKey]
 	if !ok {
 		return nil, fmt.Errorf("%w: PrimaryKey is missing Fields", ErrValidationFailed)
 	}
@@ -55,13 +61,13 @@ func (s *Collection) Put(doc Document) (*Document, error) {
 		return nil, fmt.Errorf("%w: document validation failed: %w", ErrValidationFailed, validationErrors)
 	}
 
-	s.Documents[id] = doc
+	s.documents[id] = doc
 	return &doc, nil
 }
 
 func (s *Collection) Get(key string) (*Document, error) {
 	slog.Debug("Get document:", "key", key)
-	if doc, ok := s.Documents[key]; ok {
+	if doc, ok := s.documents[key]; ok {
 		return &doc, nil
 	}
 
@@ -71,7 +77,7 @@ func (s *Collection) Get(key string) (*Document, error) {
 func (s *Collection) Delete(key string) bool {
 	slog.Debug("Delete document:", "key", key)
 	if _, err := s.Get(key); err == nil {
-		delete(s.Documents, key)
+		delete(s.documents, key)
 		return true
 	}
 
@@ -80,10 +86,30 @@ func (s *Collection) Delete(key string) bool {
 
 func (s *Collection) List() []Document {
 	slog.Debug("List documents in collection")
-	docs := make([]Document, 0, len(s.Documents))
-	for _, doc := range s.Documents {
+	docs := make([]Document, 0, len(s.documents))
+	for _, doc := range s.documents {
 		docs = append(docs, doc)
 	}
 
 	return docs
+}
+
+func (s *Collection) MarshalJSON() ([]byte, error) {
+	collection := PublicCollection{
+		Cfg:       s.cfg,
+		Documents: s.documents,
+	}
+
+	return json.Marshal(&collection)
+}
+
+func (s *Collection) UnmarshalJSON(data []byte) error {
+	publicCollection := PublicCollection{}
+	if err := json.Unmarshal(data, &publicCollection); err != nil {
+		return err
+	}
+	s.cfg = publicCollection.Cfg
+	s.documents = publicCollection.Documents
+
+	return nil
 }
